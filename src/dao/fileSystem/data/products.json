@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "title": "Arroz",
+        "description": "doble carolina",
+        "price": "100",
+        "thumbnail": [],
+        "status": true
+    },
+    {
+        "id": 2,
+        "title": "Polenta",
+        "description": "presto pronta",
+        "price": "200",
+        "thumbnail": [],
+        "status": true
+    }
+]
