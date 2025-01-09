@@ -5,6 +5,7 @@ import handlebars from "express-handlebars";
 import { Server } from "socket.io";
 import viewsRoutes from "./routes/views.routes.js";
 import { connectMongoDB } from "./config/mongoDB.config.js";
+import initializedPassport from "./config/passport.config.js";
 import session from "express-session";
 
 const app = express();
@@ -25,6 +26,8 @@ app.use(
     saveUninitialized: true  // Guarda la session
   })
 )
+
+initializedPassport();
 
 // Rutas de la api
 app.use("/api", routes);
