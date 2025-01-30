@@ -1,8 +1,11 @@
 import passport from 'passport';
 import local from 'passport-local';
+import google from 'passport-google-oauth20';
 import { userDao } from "../dao/mongo/user.dao.js";
 import { hashPasswordSync, comparePasswordSync } from '../utils/hashPassword.js';
+
 const LocalStrategy = local.Strategy;
+const GoogleStrategy = google.Strategy;
 
 //funcion global de estrategias
 const initializedPassport = () => {
@@ -42,6 +45,60 @@ const initializedPassport = () => {
             }
         }));
 
+    passport.use("login", new LocalStrategy({ usernameField: "email" }, async (username, password, done) => {
+        try {
+            const user = await userDao.getByEmail(username);
+            const checkPass = comparePasswordSync(password, user.password);
+
+            if (!user || !checkPass) return done(null, false, { message: 'User or email invalid.' });
+
+            return done(null, user);
+
+        } catch (error) {
+            done(error);
+        }
+    }));
+
+    //estrategia de google usando passport
+    passport.use(
+        new GoogleStrategy({
+            //clientID: process.env.GOOGLE_CLIENT_ID,
+            //clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            clientID: "162323797214-rsgp9gtma3528ouatuek31vhrmgov67h.apps.googleusercontent.com",
+            clientSecret: "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",
+            callbackURL: "http://localhost:8080/api/session/google"
+        },
+            // accessToken y refreshToken son tokens que se utilizan para acceder a la API de Google.
+            // profile es un objeto que contiene información del usuario.
+            // cb es como un done
+            // accessToken y refreshToken no los vamos a utilizar en este caso, pero es por un tema de orden de parametros
+            async (accessToken, refreshToken, profile, cb) => {
+                try {
+
+                    //para ver lo que me manda Google en el profile, con un array de emails
+                    console.log(profile);
+
+                    const { name, emails } = profile;
+                    const user = await userDao.getByEmail(emails[0].value);
+
+                    if (user) return cb(null, user);
+
+                    const newUser = await userDao.create({
+                        email: emails[0].value,
+                        first_name: name.givenName,
+                        last_name: name.familyName
+                    });
+
+                    return cb(null, newUser);
+
+                } catch (error) {
+                    cb(error)
+                }
+            }
+        )
+    );
+
+
     // Serialización y deserialización de usuarios
     /* 
      La serialización y deserialización de usuarios es un proceso que nos permite almacenar y recuperar información del usuario en la sesión.
@@ -49,8 +106,6 @@ const initializedPassport = () => {
      La deserialización es el proceso de recuperar un objeto de usuario a partir de un identificador único.
      Los datos del user se almacenan en la sesión y se recuperan en cada petición.
      */
-
-
     // de donde toma el user? Bueno, el done de la funcion de autenticacion ya tiene el createdUser y se lo pasa a serializeUser para que lo serialice.
     // de ahi es que lo toma/recibe
     passport.serializeUser((user, done) => {
@@ -68,20 +123,6 @@ const initializedPassport = () => {
             done(error)
         }
     })
-
-    passport.use("login", new LocalStrategy({ usernameField: "email" }, async (username, password, done) => {
-        try {
-            const user = await userDao.getByEmail(username);
-            const checkPass = comparePasswordSync(password, user.password);
-
-            if (!user || !checkPass) return done(null, false, { message: 'User or email invalid.' });
-
-            return done(null, user);
-
-        } catch (error) {
-            done(error);
-        }
-    }));
 
 };
 

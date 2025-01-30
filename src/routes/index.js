@@ -7,7 +7,7 @@ const router = Router();
 
 router.use("/products", productsRouter);
 router.use("/carts", cartsRouter);
-router.use("/sessions", sessionsRouter);
+router.use("/session", sessionsRouter);
 
 
 export default router;
