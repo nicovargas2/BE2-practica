@@ -7,6 +7,7 @@ import viewsRoutes from "./routes/views.routes.js";
 import { connectMongoDB } from "./config/mongoDB.config.js";
 import initializedPassport from "./config/passport.config.js";
 import session from "express-session";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -28,6 +29,8 @@ app.use(
 )
 
 initializedPassport();
+//aca pongo lo de cookieParser
+app.use(cookieParser());
 
 // Rutas de la api
 app.use("/api", routes);

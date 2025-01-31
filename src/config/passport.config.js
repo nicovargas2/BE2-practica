@@ -1,11 +1,15 @@
 import passport from 'passport';
 import local from 'passport-local';
 import google from 'passport-google-oauth20';
+import jwt from 'passport-jwt';
 import { userDao } from "../dao/mongo/user.dao.js";
 import { hashPasswordSync, comparePasswordSync } from '../utils/hashPassword.js';
+import { cookieExtractor } from '../utils/cookieExtractor.js';
 
 const LocalStrategy = local.Strategy;
 const GoogleStrategy = google.Strategy;
+const JwtStrategy = jwt.Strategy;
+const ExtractJwt = jwt.ExtractJwt;
 
 //funcion global de estrategias
 const initializedPassport = () => {
@@ -23,7 +27,7 @@ const initializedPassport = () => {
             done es una función que se llama cuando la autenticación se completa. done toma tres argumentos: error, usuario y opciones.
             */
             try {
-                const { first_name, last_name, age } = req.body;
+                const { first_name, last_name, age, role } = req.body;
 
                 // verificamos si el usuario ya existe
                 const user = await userDao.getByEmail(username);
@@ -35,7 +39,8 @@ const initializedPassport = () => {
                     password: hashPasswordSync(password),
                     first_name,
                     last_name,
-                    age
+                    age,
+                    role
                 }
                 const createdUser = await userDao.create(newUser);
                 return done(null, createdUser);
@@ -124,6 +129,25 @@ const initializedPassport = () => {
         }
     })
 
+    //1- el extractor reemplaza a la funcion que creamos de verifyToken
+    //
+    passport.use("jwt", new JwtStrategy({ jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]), secretOrKey: "codigoSecreto" },
+        async (jwt_payload, done) => {
+            try {
+                //console.log(jwt_payload);
+
+                const { email } = jwt_payload;
+
+                const user = await userDao.getByEmail(email);
+
+                if (!user) return done(null, false);
+
+                done(null, user);
+            } catch (error) {
+                done(error)
+            }
+        }
+    ));//fin estrategia de jwt
 };
 
 export default initializedPassport;
