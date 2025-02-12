@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import envsConfig from '../config/envs.config.js';
 
 //crear una funcion que reciba un payload y devuelva un token
 export const createToken = (user) => {
@@ -11,7 +12,8 @@ export const createToken = (user) => {
     // expiresIn es el tiempo de vida del token
     //return jwt.sign(payload, process.env.SECRET, { expiresIn: '1d' });
 
-    const token = jwt.sign(payload, "codigoSecreto", { expiresIn: '10m' });
+    const token = jwt.sign(payload, envsConfig.JWT_SECRET, { expiresIn: '1m' });
+    //const token = jwt.sign(payload, envsConfig.JWT_SECRET, { expiresIn: '10m' });
     return token;
 }
 
@@ -19,7 +21,7 @@ export const createToken = (user) => {
 export const verifyToken = (token) => {
     try {
         //return jwt.verify(token, process.env.SECRET);
-        return jwt.verify(token, "codigoSecreto");
+        return jwt.verify(token, envsConfig.JWT_SECRET);
     } catch (error) {
         console.log(error);
         return null;
