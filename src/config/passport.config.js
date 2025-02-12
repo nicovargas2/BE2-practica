@@ -3,8 +3,10 @@ import local from 'passport-local';
 import google from 'passport-google-oauth20';
 import jwt from 'passport-jwt';
 import { userDao } from "../dao/mongo/user.dao.js";
+import { cartDao } from "../dao/mongo/cart.dao.js";
 import { hashPasswordSync, comparePasswordSync } from '../utils/hashPassword.js';
 import { cookieExtractor } from '../utils/cookieExtractor.js';
+import envsConfig from '../config/envs.config.js';
 
 const LocalStrategy = local.Strategy;
 const GoogleStrategy = google.Strategy;
@@ -33,6 +35,8 @@ const initializedPassport = () => {
                 const user = await userDao.getByEmail(username);
                 if (user) return done(null, false, { message: 'User already exists' });
 
+                const newCart = await cartDao.create();
+
                 //creamos el usuario
                 const newUser = {
                     email: username,
@@ -40,9 +44,12 @@ const initializedPassport = () => {
                     first_name,
                     last_name,
                     age,
-                    role
+                    role,
+                    cart: newCart._id
                 }
+
                 const createdUser = await userDao.create(newUser);
+
                 return done(null, createdUser);
 
             } catch (error) {
@@ -131,7 +138,7 @@ const initializedPassport = () => {
 
     //1- el extractor reemplaza a la funcion que creamos de verifyToken
     //
-    passport.use("jwt", new JwtStrategy({ jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]), secretOrKey: "codigoSecreto" },
+    passport.use("jwt", new JwtStrategy({ jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]), secretOrKey: envsConfig.JWT_SECRET },
         async (jwt_payload, done) => {
             try {
                 //console.log(jwt_payload);
