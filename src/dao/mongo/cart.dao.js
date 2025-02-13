@@ -32,6 +32,8 @@ class CartDao {
   }
 
   // Método para agregar un producto a un carrito
+  /* no se usa más este método porque se cambió la lógica de negocio
+  // ahora se usa el método addProductToCart de la clase CartsServices
   async addProductToCart(cid, pid) {
     const cart = await cartModel.findById(cid);
 
@@ -44,18 +46,19 @@ class CartDao {
 
     await cart.save(); // Guardamos los cambios realizado en la base de datos de mongo
     return cart;
-  }
+  }*/
 
   // Método para eliminar un producto de un carrito
-  async deleteProductToCart(cid, pid) {
+  /* async deleteProductToCart(cid, pid) {
     const cart = await cartModel.findById(cid);
     cart.products = cart.products.filter((element) => element.product != pid);
     await cart.save();
 
     return cart;
-  }
+  }*/
 
   // Método para actualizar la cantidad de un producto en un carrito
+  /* este lo sacamos tambien
   async updateQuantityProductInCart(cid, pid, quantity) {
     const cart = await cartModel.findById(cid);
     const product = cart.products.find((element) => element.product == pid);
@@ -63,16 +66,8 @@ class CartDao {
 
     await cart.save();
     return cart;
-  }
+  }*/
 
-  // Método para eliminar todos los productos de un carrito
-  async clearProductsToCart(cid) {
-    const cart = await cartModel.findById(cid);
-    cart.products = [];
-
-    await cart.save();
-    return cart;
-  }
 }
 
 export const cartDao = new CartDao();
