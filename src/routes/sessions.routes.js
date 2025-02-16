@@ -6,6 +6,7 @@ import passport from 'passport';
 import { createToken, verifyToken } from "../utils/jwt.js";
 import { passportCall } from "../middlewares/passportCall.middleware.js";
 import { authorization } from "../middlewares/authorization.middleware.js";
+import { UserDto } from "../dto/user.dto.js";
 
 const router = Router();
 
@@ -111,7 +112,8 @@ router.post("/loginPassportCall", passportCall("login"), async (req, res) => {
     const token = createToken(req.user);
     res.cookie("token", token, { httpOnly: true });
 
-    res.status(200).json({ status: "success", payload: req.user, token });
+    const user = new UserDto(req.user);
+    res.status(200).json({ status: "success", payload: user, token });
 
   } catch (error) {
     console.log(error);
@@ -234,7 +236,9 @@ router.get("/current2", passport.authenticate("jwt"), async (req, res) => {
 
 //aca usamos el middleware que creamos passportCall
 router.get("/current3", passportCall("jwt"), authorization("admin"), async (req, res) => {
-  return res.status(200).json({ status: "ok", user: req.user });
+  const user = new UserDto(req.user);
+
+  return res.status(200).json({ status: "ok", user });
 });
 
 export default router;
