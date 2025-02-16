@@ -5,10 +5,51 @@ import { comparePasswordSync } from "../utils/hashPassword.js";
 import passport from 'passport';
 import { createToken, verifyToken } from "../utils/jwt.js";
 import { passportCall } from "../middlewares/passportCall.middleware.js";
-import { authorization } from "../middlewares/authorization.middleware.js";
-import { UserDto } from "../dto/user.dto.js";
+import { sessionController } from "../controllers/session.controller.js";
 
 const router = Router();
+
+/*****************************************************************
+
+A continuacion, estos endpoints fueron reordenados para usar 
+el sessionController y ajustarnos más a la arquitectura de
+controladores y servicios.
+
+*****************************************************************/
+
+// Este endpoint es para que passport haga la autenticacion con la 
+// estrategia register usando el middleware passportCall que creamos
+router.post("/registerPassportCall", passportCall('register'), sessionController.registerPassportCall);
+
+// Este endpoint es para que passport haga la autenticacion con 
+// la estrategia login usando el middleware passportCall que creamos
+router.post("/loginPassportCall", passportCall("login"), sessionController.loginPassportCall);
+
+
+// aca usamos el middleware que creamos passportCall para 
+// obtener la sesion activa
+router.get("/current3", passportCall("jwt"), sessionController.currentUser);
+
+// Para hacer un restore de la contraseña
+router.put("/restorePassword", sessionController.restorePassword);
+
+// Para hacer un update de la contraseña
+router.put("/updatePassword", sessionController.updatePassword);
+
+
+
+
+
+
+
+
+
+/*****************************************************************
+
+A continuacion, estos endpoints fueron creados para tener 
+la practica de otras formas de manejo de sesion y perfiles
+
+*****************************************************************/
 
 router.post("/register", passport.authenticate('register'), async (req, res) => {
   try {
@@ -34,27 +75,12 @@ router.post("/register", passport.authenticate('register'), async (req, res) => 
     console.log(error);
     res.status(500).json({ status: "Error", msg: "Error interno del servidor" });
   }
-
 })
-
-/*
-este endpoint es para que passport haga la autenticacion con la estrategia register
-usando el middleware passportCall que creamos
-*/
-router.post("/registerPassportCall", passportCall('register'), async (req, res) => {
-  try {
-    res.status(201).json({ status: "success", payload: "Usuario registrado" });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ status: "Error", msg: "Error interno del servidor" });
-  }
-})
-
 
 router.post("/login", passport.authenticate("login"), async (req, res) => {
   try {
-    /*const { email, password } = req.body;
+    /*
+    const { email, password } = req.body;
     const user = await userDao.getByEmail(email);
 
     const checkPass = comparePasswordSync(password, user.password)
@@ -92,35 +118,12 @@ router.post("/login", passport.authenticate("login"), async (req, res) => {
   }
 })
 
-/*
-este endpoint es para que passport haga la autenticacion con la estrategia login
-usando el middleware passportCall que creamos
-*/
-router.post("/loginPassportCall", passportCall("login"), async (req, res) => {
-  try {
-
-    /* esto provoca un error al usar el middleware que valida el role,
-    asi que lo comentamos y lo agrego en el payload de la respuesta
-    req.session.user = {
-      email: req.user.email,
-      first_name: req.user.first_name,
-      last_name: req.user.last_name,
-      age: req.user.age,
-      role: "user"
-    }*/
-
-    const token = createToken(req.user);
-    res.cookie("token", token, { httpOnly: true });
-
-    const user = new UserDto(req.user);
-    res.status(200).json({ status: "success", payload: user, token });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ status: "Erro", msg: "Error interno del servidor" });
-  }
-})
-
+// el beneficio de este endpoint es que queda mas limpio el codigo,
+// y el resto lo manejamos dentro de la estrategia jwt
+//este encabezado dice que use como middleware la autenticacion con jwt
+router.get("/current2", passport.authenticate("jwt"), async (req, res) => {
+  return res.status(200).json({ status: "ok", user: req.user });
+});
 
 router.get("/profile", async (req, res) => {
 
@@ -154,42 +157,7 @@ router.get("/logout", async (req, res) => {
 
 })
 
-router.put("/update-password", async (req, res) => {
-  try {
-    const { email, password, newPassword } = req.body;
-    const user = await userDao.getByEmail(email);
 
-    if (!user) return res.status(404).json({ status: "error", msg: "Usuario no encontrado" });
-
-    const checkPass = comparePasswordSync(password, user.password)
-
-    if (!checkPass) {
-      await userDao.update(user._id, hashPasswordSync(newPassword));
-
-      res.status(200).json({ status: "success", payload: "Contraseña actualizada" })
-
-      return res.status
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ status: "Erro", msg: "Error interno del servidor" });
-  }
-})
-
-router.put("/restore-password", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await userDao.getByEmail(email);
-
-    await userDao.update(user._id, { password: hashPasswordSync(password) });
-
-    res.status(200).json({ status: "success", payload: "Contraseña actualizada" })
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ status: "Erro", msg: "Error interno del servidor" });
-  }
-})
 
 // Ruta de google
 router.get("/google",
@@ -224,21 +192,6 @@ router.get("/current", async (req, res) => {
   const user = await userDao.getByEmail(validToken.email);
 
   return res.status(200).json({ status: "ok", payload: user });
-});
-
-// el beneficio de este endpoint es que queda mas limpio el codigo,
-// y el resto lo manejamos dentro de la estrategia jwt
-
-//este encabezado dice que use como middleware la autenticacion con jwt
-router.get("/current2", passport.authenticate("jwt"), async (req, res) => {
-  return res.status(200).json({ status: "ok", user: req.user });
-});
-
-//aca usamos el middleware que creamos passportCall
-router.get("/current3", passportCall("jwt"), authorization("admin"), async (req, res) => {
-  const user = new UserDto(req.user);
-
-  return res.status(200).json({ status: "ok", user });
 });
 
 export default router;
