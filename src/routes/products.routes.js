@@ -3,6 +3,8 @@ import { checkProductData } from "../middlewares/checkProductData.middleware.js"
 //import { productDao } from "../dao/mongo/product.dao.js";
 //import { ProductsServices } from "../services/products.service.js";
 import { productsController } from "../controllers/products.controller.js";
+import { passportCall } from "../middlewares/passportCall.middleware.js";
+import { authorization } from "../middlewares/authorization.middleware.js";
 
 const router = Router();
 
@@ -10,10 +12,10 @@ router.get("/", productsController.getAll);
 
 router.get("/:pid", productsController.getById);
 
-router.delete("/:pid", productsController.deleteOne);
+router.delete("/:pid", passportCall("jwt"), authorization("admin"), productsController.deleteOne);
 
-router.put("/:pid", productsController.update);
+router.put("/:pid", passportCall("jwt"), authorization("admin"), productsController.update);
 
-router.post("/", checkProductData, productsController.create);
+router.post("/", passportCall("jwt"), authorization("admin"), checkProductData, productsController.create);
 
 export default router;
