@@ -18,4 +18,8 @@ router.put("/:cid/product/:pid", passportCall("jwt"), authorization("user"), car
 
 router.delete("/:cid", passportCall("jwt"), authorization("user"), cartsController.clearProductsToCart);
 
+// Agrego router para las compras
+router.post("/:cid/purchase", passportCall("jwt"), authorization("user"), cartsController.purchase);
+
+
 export default router;

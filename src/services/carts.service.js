@@ -1,4 +1,5 @@
 import { cartDao } from '../dao/mongo/cart.dao.js';
+import { productDao } from '../dao/mongo/product.dao.js';
 
 class CartsServices {
 
@@ -14,7 +15,7 @@ class CartsServices {
         const cart = await cartDao.getById(cartId);
         if (!cart) throw new Error('Cart not found');
 
-        const productInCart = cart.products.find((element) => element.product == productId);
+        const productInCart = cart.products.find((element) => element.product._id == productId);
         if (productInCart) {
             productInCart.quantity++;
         } else {
@@ -44,6 +45,30 @@ class CartsServices {
         cart.products = [];
 
         return await cartDao.update(cartId, { products: [] });
+    }
+
+    async purchase(cart) {
+        let total = 0;
+        const productsWithoutStock = [];
+
+        for (const productCart of cart.products) {
+            const productDB = await productDao.getById(productCart.product);
+
+            if (productDB.stock < productCart.quantity) {
+                productsWithoutStock.push(productCart);
+            } else {
+                total += productDB.price * productCart.quantity;
+                productDB.stock -= productCart.quantity;
+                await productDao.update(productDB._id, { stock: productDB.stock });
+                await cartDao.update(cart._id, { products: [] });
+            }
+        }
+
+        if (productsWithoutStock.length > 0) {
+            await cartDao.update(cart._id, { products: productsWithoutStock });
+        }
+
+        return total;
     }
 }
 

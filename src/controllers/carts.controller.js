@@ -1,5 +1,8 @@
 import { cartsServices } from "../services/carts.service.js";
 import { productDao } from "../dao/mongo/product.dao.js";
+import { request } from "express";
+import { response } from "express";
+import { ticketsService } from "../services/tickets.service.js";
 
 class CartsControllers {
 
@@ -87,6 +90,26 @@ class CartsControllers {
             if (!cart) return res.status(404).json({ status: "Error", msg: "Carrito no encontrado" });
 
             res.status(200).json({ status: "success", cart });
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ status: "Erro", msg: "Error interno del servidor" });
+        }
+    }
+
+    async purchase(req = request, res = response) {
+        try {
+            const { cid } = req.params;
+            const cart = await cartsServices.getById(cid);
+            if (!cart) return res.status(404).json({ status: "Error", msg: "Carrito no encontrado" });
+            if (cart.products.length === 0) return res.status(400).json({ status: "Error", msg: "Carrito vacío" });
+
+            const totalPricePurchase = await cartsServices.purchase(cart);
+
+            if (totalPricePurchase === 0) return res.status(400).json({ status: "Error", msg: "No hay productos en stock" });
+
+            const ticket = await ticketsService.create(totalPricePurchase, req.user.email);
+
+            res.status(200).json({ status: "success", ticket });
         } catch (error) {
             console.log(error);
             res.status(500).json({ status: "Erro", msg: "Error interno del servidor" });
