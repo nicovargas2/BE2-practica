@@ -12,7 +12,7 @@ export const createToken = (user) => {
     // expiresIn es el tiempo de vida del token
     //return jwt.sign(payload, process.env.SECRET, { expiresIn: '1d' });
 
-    const token = jwt.sign(payload, envsConfig.JWT_SECRET, { expiresIn: '1m' });
+    const token = jwt.sign(payload, envsConfig.JWT_SECRET, { expiresIn: '1h' });
     //const token = jwt.sign(payload, envsConfig.JWT_SECRET, { expiresIn: '10m' });
     return token;
 }
